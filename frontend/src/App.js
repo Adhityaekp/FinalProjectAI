@@ -4,7 +4,7 @@ import axios from "axios";
 function App() {
   const [file, setFile] = useState(null);
   const [query, setQuery] = useState("");
-  const [question, setQuestion] = useState(""); // State baru untuk menyimpan pertanyaan terkait file
+  const [question, setQuestion] = useState(""); 
   const [response, setResponse] = useState("");
 
   const handleFileChange = (e) => {
@@ -12,13 +12,13 @@ function App() {
   };
 
   const handleQuestionChange = (e) => {
-    setQuestion(e.target.value); // Simpan input teks pertanyaan ke state 'question'
+    setQuestion(e.target.value); 
   };
 
   const handleUpload = async () => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("question", question); // Sertakan 'question' dalam formData
+    formData.append("question", question); 
 
     try {
       const res = await axios.post("http://localhost:8080/upload", formData, {
@@ -26,7 +26,7 @@ function App() {
           "Content-Type": "multipart/form-data",
         },
       });
-      setResponse(res.data.answer); // Asumsikan respons memiliki field 'answer'
+      setResponse(res.data.answer); 
     } catch (error) {
       console.error("Error uploading file:", error);
     }
