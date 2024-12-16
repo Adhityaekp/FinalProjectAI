@@ -23,7 +23,7 @@ func (s *AIService) AnalyzeData(table map[string][]string, query, token string) 
 		return "", errors.New("table cannot be empty")
 	}
 
-	url := "https://api-inference.huggingface.co/models/tapas-base-finetuned-wtq"
+	url := "https://api-inference.huggingface.co/models/google/tapas-large-finetuned-wtq"
 	reqBody, _ := json.Marshal(map[string]interface{}{
 		"inputs": map[string]interface{}{
 			"query": query,
@@ -59,11 +59,20 @@ func (s *AIService) AnalyzeData(table map[string][]string, query, token string) 
 }
 
 func (s *AIService) ChatWithAI(context, query, token string) (model.ChatResponse, error) {
-	url := "https://api-inference.huggingface.co/models/microsoft/Phi-3.5-mini-instruct"
-	reqBody, _ := json.Marshal(map[string]string{
-		"context": context,
-		"query":   query,
+	url := "https://api-inference.huggingface.co/models/microsoft/Phi-3.5-mini-instruct/v1/chat/completions"
+
+	reqBody, _ := json.Marshal(map[string]interface{}{
+		"model": "microsoft/Phi-3.5-mini-instruct",
+		"messages": []map[string]string{
+			{
+				"role":    "user",
+				"content": query,
+			},
+		},
+		"max_tokens": 500,
+		"stream":     false,
 	})
+
 	req, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqBody))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
@@ -83,14 +92,26 @@ func (s *AIService) ChatWithAI(context, query, token string) (model.ChatResponse
 		return model.ChatResponse{}, err
 	}
 
-	fmt.Println(string(body)) 
+	fmt.Println(string(body))
 
-	var responses []model.ChatResponse
-	if err := json.Unmarshal(body, &responses); err != nil {
+	var response struct {
+		Choices []struct {
+			Message struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+
+	if err := json.Unmarshal(body, &response); err != nil {
 		return model.ChatResponse{}, err
 	}
 
-	return responses[0], nil
+	if len(response.Choices) > 0 {
+		return model.ChatResponse{
+			GeneratedText: response.Choices[0].Message.Content,
+		}, nil
+	}
+
+	return model.ChatResponse{}, fmt.Errorf("no response choices found")
 }
-
-

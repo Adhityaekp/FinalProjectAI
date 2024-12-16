@@ -1,72 +1,230 @@
 import React, { useState } from "react";
 import axios from "axios";
+import "./App.css";
 
 function App() {
   const [file, setFile] = useState(null);
   const [query, setQuery] = useState("");
-  const [question, setQuestion] = useState(""); 
+  const [question, setQuestion] = useState("");
   const [response, setResponse] = useState("");
+  const [activeMenu, setActiveMenu] = useState("chatAI");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
   const handleQuestionChange = (e) => {
-    setQuestion(e.target.value); 
+    setQuestion(e.target.value);
   };
 
   const handleUpload = async () => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("question", question); 
+    formData.append("question", question);
 
+    setIsLoading(true);
     try {
       const res = await axios.post("http://localhost:8080/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      setResponse(res.data.answer); 
+      setResponse(res.data.answer);
     } catch (error) {
       console.error("Error uploading file:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleChat = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.post("http://localhost:8080/chat", { query });
       setResponse(res.data.answer);
     } catch (error) {
       console.error("Error querying chat:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px", textAlign: "center", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ color: "#333", marginBottom: "20px" }}>Data Analysis Chatbot</h1>
-      <div style={{ marginBottom: "20px" }}>
-        <input type="file" onChange={handleFileChange} style={{ padding: "10px", marginRight: "10px", border: "1px solid #ccc", borderRadius: "4px" }} />
-        <input type="text" value={question} onChange={handleQuestionChange} style={{ padding: "10px", marginRight: "10px", border: "1px solid #ccc", borderRadius: "4px" }} placeholder="Question related to file" />
-        <button onClick={handleUpload} style={{ padding: "10px 20px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
-          Upload and Analyze
-        </button>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        height: "100vh",
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "#1a2238",
+        color: "#e0e6ed",
+      }}
+    >
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "20px",
+          boxSizing: "border-box",
+        }}
+      >
+        <h1
+          style={{
+            color: "#e0e6ed",
+            fontSize: "1.8rem",
+            marginBottom: "20px",
+            textAlign: "center",
+          }}
+        >
+          TAKON AI
+        </h1>
+        <div className="button-menu" style={{ marginBottom: "10px" }}>
+          <button className="button" onClick={() => setActiveMenu("chatAI")}>
+            Chat AI
+          </button>
+          <button className="button" onClick={() => setActiveMenu("uploadAnalyze")}>
+            Upload and Analyze
+          </button>
+        </div>
+        <div
+          style={{
+            padding: "20px",
+            border: "1px solid #2c3e50",
+            borderRadius: "8px",
+            backgroundColor: "#273c75",
+          }}
+        >
+          <h2 style={{ fontSize: "1.2rem", marginBottom: "10px" }}>Response</h2>
+          {isLoading ? (
+            <div
+              style={{
+                color: "#2e86de",
+                fontStyle: "italic",
+                fontSize: "1rem",
+              }}
+            >
+              Typing<span className="dots">...</span>
+            </div>
+          ) : (
+            <p style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>{response}</p>
+          )}
+        </div>
       </div>
-      <div style={{ marginBottom: "20px" }}>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ask a question..."
-          style={{ padding: "10px", marginRight: "10px", border: "1px solid #ccc", borderRadius: "4px", width: "calc(100% - 140px)" }}
-        />
-        <button onClick={handleChat} style={{ padding: "10px 20px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
-          Chat
-        </button>
+
+      <div
+        style={{
+          borderTop: "1px solid #2c3e50",
+          padding: "10px 20px",
+          backgroundColor: "#1a2238",
+          boxSizing: "border-box",
+        }}
+      >
+        {activeMenu === "chatAI" && (
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Ask a question..."
+              style={{
+                flex: 1,
+                padding: "10px 40px 10px 10px",
+                border: "1px solid #2c3e50",
+                borderRadius: "6px",
+                backgroundColor: "#2c3e50",
+                color: "#e0e6ed",
+              }}
+            />
+            <button
+              onClick={handleChat}
+              style={{
+                position: "absolute",
+                right: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                backgroundColor: "transparent",
+                border: "none",
+                color: "#2e86de",
+                fontSize: "1.2rem",
+                cursor: "pointer",
+              }}
+            >
+              ➤
+            </button>
+          </div>
+        )}
+
+        {activeMenu === "uploadAnalyze" && (
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <input
+              type="text"
+              value={question}
+              onChange={handleQuestionChange}
+              placeholder="Question related to file"
+              style={{
+                padding: "10px 40px 10px 40px",
+                border: "1px solid #2c3e50",
+                borderRadius: "6px",
+                backgroundColor: "#2c3e50",
+                color: "#e0e6ed",
+                position: "relative",
+              }}
+            />
+            <label
+              htmlFor="file-upload"
+              style={{
+                position: "absolute",
+                left: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                cursor: "pointer",
+                color: "#e0e6ed",
+              }}
+            >
+              📎
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              onChange={handleFileChange}
+              style={{
+                display: "none",
+              }}
+            />
+            <button
+              onClick={handleUpload}
+              style={{
+                position: "absolute",
+                right: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                backgroundColor: "transparent",
+                border: "none",
+                color: "#2e86de",
+                fontSize: "1.2rem",
+                cursor: "pointer",
+              }}
+            >
+              ➤
+            </button>
+          </div>
+        )}
       </div>
-      <div style={{ marginTop: "20px", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", backgroundColor: "#f9f9f9" }}>
-        <h2>Response</h2>
-        <p>{response}</p>
-      </div>
+      <footer
+        style={{
+          padding: "10px 20px",
+          backgroundColor: "#1a2238",
+          textAlign: "center",
+          color: "#e0e6ed",
+          fontSize: "0.9rem",
+        }}
+      >
+        <span>
+          TAKON AI | Powered by <strong>ADTY • Ruang Guru</strong>
+        </span>
+      </footer>
     </div>
   );
 }

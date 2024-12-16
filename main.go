@@ -47,6 +47,8 @@ func main() {
 			return
 		}
 
+		log.Println("Using token:", token)
+
 		file, _, err := r.FormFile("file")
 		if err != nil {
 			http.Error(w, "Failed to read file", http.StatusBadRequest)
@@ -60,19 +62,35 @@ func main() {
 			return
 		}
 
+		log.Println("File content successfully read")
+
+		question := r.FormValue("question")
+		if question == "" {
+			http.Error(w, "Question not provided", http.StatusBadRequest)
+			return
+		}
+
+		log.Println("Received question:", question)
+
 		table, err := fileService.ProcessFile(string(fileContent))
 		if err != nil {
+			log.Println("Error processing file:", err)
 			http.Error(w, "Failed to process file", http.StatusInternalServerError)
 			return
 		}
 
-		query := "Find the least and most electricity usage" // Contoh query
-		response, err := aiService.AnalyzeData(table, query, token)
+		log.Printf("Processed table: %+v\n", table)
+
+		response, err := aiService.AnalyzeData(table, question, token)
 		if err != nil {
+			log.Println("Error analyzing data:", err)
 			http.Error(w, "Failed to analyze data", http.StatusInternalServerError)
 			return
 		}
 
+		log.Println("AI Response:", response)
+
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{
 			"status": "success",
 			"answer": response,
@@ -95,11 +113,16 @@ func main() {
 			return
 		}
 
+		log.Println("Chat request received:", request)
+
 		response, err := aiService.ChatWithAI(request.Context, request.Query, token)
 		if err != nil {
+			log.Println("Error communicating with AI:", err)
 			http.Error(w, "Failed to communicate with AI", http.StatusInternalServerError)
 			return
 		}
+
+		log.Println("Chat AI Response:", response.GeneratedText)
 
 		json.NewEncoder(w).Encode(map[string]string{
 			"status": "success",
